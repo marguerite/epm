@@ -12,7 +12,6 @@ end
 # accept optional arguments
 arguments = String.new
 ARGV.each {|i| arguments = arguments + " " + i}
-p arguments
 
 # detect cpu numbers
 cpu = String.new
@@ -30,4 +29,4 @@ end
 
 diff = newlist - oldlist
 
-puts diff
+puts "Files waiting to be packaged:\n#{diff}\nPlease run \"easy_pack\" command."

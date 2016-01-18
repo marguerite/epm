@@ -26,8 +26,23 @@ arguments = tool + " " + prefix
 # FIXME not that easy actually
 ARGV.each {|arg| arguments = arguments + " " + arg}
 
-puts "configure options are #{arguments}"
+# get cpu cores
+cores = String.new
+Open3.popen3("nproc") do |stdin,stdout,stderr|
+	cores = stdout.read
+end
 
 Open3.popen3(arguments) do |stdin,stdout,stderr,wait_thr|
 	stdout.each_line { |l| puts l }
+	exit_status = wait_thr.value
+	if exit_status == 0
+		Open3.popen3("make -j#{cores}") do |s1,s2,s3,w1|
+			s2.each_line { |l| puts l }
+			if w1.value == 0
+				exit
+			else
+				abort "Build failed!"
+			end
+		end
+	end
 end
