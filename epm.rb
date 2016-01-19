@@ -15,7 +15,21 @@ ARGV.each do |a|
 end
 
 dbname = file.gsub(".epm","")
-path = "/tmp/#{dbname}"
+$path = "/tmp/#{dbname}"
+
+def writedb(db={},dbname="",element="")
+	if db.key?(dbname)
+		db[dbname] << element
+	else
+		db.store(dbname,[element])
+	end
+end
+
+def installfile(file="",mode=Integer.new)
+	io = IO.popen("install -Dm" + mode.to_s + " " + $path + file + " " + file)
+	io.each_line {|l| puts l }
+	io.close
+end
 
 if arguments[0] == "install"
 	# unpack
@@ -27,33 +41,26 @@ if arguments[0] == "install"
 
 	# generate filelist following system hirachy
 	filelist = Array.new
-	Dir.glob("#{path}/**/*").each do |f|
-		filelist << f.gsub(path,"")
+	Dir.glob("#{$path}/**/*").each do |f|
+		filelist << f.gsub($path,"")
 	end
 		
 	filelist.each do |f|
 		# dont do anything on existing directory
 		unless File.directory?(f)
 			if f.index("/bin")
-				db.store(dbname,[f])
-				Open3.popen3("install -Dm755 #{path + f} #{f}") do |s1,s2,s3|
-					s2.each_line {|l| puts l}
-				end
+				writedb(db,dbname,f)
+				installfile(f,755)
 			else
-				# FIXME: dignose this if block
-				if db.key?(dbname)
-					db[dbname] << f
-				else
-					db.store(dbname,[f])
-				end
-				Open3.popen3("install -Dm644 #{path + f} #{f}") do |s1,s2,s3|
-					s2.each_line {|l| puts l}
-				end
+				writedb(db,dbname,f)
+				installfile(f,644)
 			end
 		end
 	end
 
 	json = db.to_json
 	File.open(dbfile,"w") {|f| f.puts json}
+
+elsif arguments[0] == "remove"
 
 end
